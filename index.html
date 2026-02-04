@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Jodie VR (SBS)</title>
+  <style>
+    body { margin:0; background:#000; overflow:hidden; }
+
+    /* Side-by-Side (levé + pravé oko) */
+    #sbs {
+      display:flex;
+      width:100vw;
+      height:100vh;
+    }
+    .eye {
+      width:50vw;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background:#000;
+    }
+    .eye video {
+      width:100%;
+      height:100%;
+      object-fit:cover; /* změň na contain, pokud chceš vidět celé video */
+      background:#000;
+    }
+
+    /* jemný „předěl“ uprostřed */
+    .eye.left { border-right: 2px solid #000; }
+
+    /* klikací overlay pro start (mobil často vyžaduje gesto) */
+    #tap {
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size:18px;
+      text-align:center;
+      padding:20px;
+      background:rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      cursor:pointer;
+      user-select:none;
+    }
+    #tap.hidden { display:none; }
+  </style>
+</head>
+<body>
+
+  <div id="sbs">
+    <div class="eye left">
+      <video id="v1" autoplay loop muted playsinline>
+        <source src="jodie.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <div class="eye right">
+      <video id="v2" autoplay loop muted playsinline>
+        <source src="jodie.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </div>
+
+  <div id="tap">Klepni na obraz pro spuštění videa ve VR 👆</div>
+
+  <script>
+    const v1 = document.getElementById("v1");
+    const v2 = document.getElementById("v2");
+    const tap = document.getElementById("tap");
+
+    async function startBoth() {
+      try {
+        // Start levého videa
+        await v1.play();
+        // Srovnat čas a start pravého
+        v2.currentTime = v1.currentTime || 0;
+        await v2.play();
+
+        tap.classList.add("hidden");
+      } catch (e) {
+        // Některé mobily vyžadují klik/gesture – overlay zůstane
+        console.log("Čekám na klik pro spuštění videa", e);
+      }
+    }
+
+    // Jemná synchronizace (aby se nerozjely)
+    v1.addEventListener("timeupdate", () => {
+      const drift = Math.abs((v1.currentTime || 0) - (v2.currentTime || 0));
+      if (drift > 0.15) v2.currentTime = v1.currentTime;
+    });
+
+    tap.addEventListener("click", startBoth);
+    window.addEventListener("load", startBoth);
+  </script>
+
+</body>
+</html>
+ 
